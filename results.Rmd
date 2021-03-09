@@ -1,0 +1,263 @@
+---
+title: "Multivariable regression"
+output:
+  html_document:
+  highlight: tango
+toc: true
+toc_float:
+  collapsed: true
+---
+
+
+Please go to Session on the RStudio Menu, and click on 'Restart R and Clear Output'.
+
+
+
+
+# MULTIVARIABLE REGRESSION
+
+
+We will use the same dataset as the previous exercise - The Human Freedom Index from the **openintro** package.
+
+In this lab, you'll be analysing data from the Human Freedom Index reports.
+Your aim will be to summarize a few of the relationships within the data both graphically and numerically in order to find which variables can help tell a story about freedom.
+
+
+## Getting Started
+
+```{r}
+
+install.packages("workflowr")
+library("workflowr")
+
+
+wflow_git_config(user.name = "Defnecob", user.email = "Cobanoglu@stud.uni-heidelberg.de", overwrite=TRUE)
+
+wflow_start("Assignment", existing = TRUE)
+
+
+```
+
+### Load packages
+
+In this lab, you will explore and visualize the data using the **tidyverse** suite of packages.
+
+The data can be found in the **openintro** package. The **broom** package helps us summarize regression results.
+
+Let's load the packages.
+
+```{r load-packages, message=FALSE}
+
+install.packages("openintro")
+library(openintro)
+library(broom)
+library(tidyverse)
+```
+
+
+### The data
+
+The data we're working with is in the openintro package and it's called `hfi`, short for Human Freedom Index.
+
+The dataset spans a lot of years, but we are only interested in data from year 2016.
+    Filter the data `hfi` data frame for year 2016, select the six variables, and assign the result to a data frame named `hfi_2016`.
+
+```{r}
+hfi_2016 <- hfi %>% 
+  filter(year == 2016)
+
+head(hfi_2016)
+```
+
+
+
+------------------------------------------------------------------------
+
+## EXERCISES
+
+1\. Copy your model from the previous exercise that uses  `pf_expression_control` to predict Human Freedom or `hf_score`. Using the `tidy` command, what does the slope tell us in the context of the relationship between human freedom and expression control in the country?
+
+```{r echo=TRUE}
+lmExhfi <- lm(hf_score ~ pf_expression_control, data = hfi_2016)
+
+tidy(lmExhfi) 
+```
+```{r echo=TRUE}
+summarise(hfi_2016, correlation_hf_pf = cor(pf_expression_control, hf_score))
+
+
+#Tells us that the correlation between expression_control and human freedom is 0.7931748
+#And that the intercept estimate is 5.053396 and the slope is 0.368432, this suggests that for every increase in pf_expression_control per unit, the human freedom increases by 0.368432
+```
+
+
+2\. Add region to the model from Q1 using `lm(hf_score ~ pf_expression_control + region, data = hfi_2016)`. What do you notice about the slope between human freedom and expression control? How has it changed from the previous model. Do you think region is a confounder, and think about reasons why this might be so? 
+
+```{r}
+lmExhfiregion <- lm(hf_score ~ pf_expression_control + region, data = hfi_2016)
+
+tidy(lmExhfiregion) 
+
+#the slope between human freedom and expression control decreased to 0.27471091 in comparison to 0.368432 in the previous model without regions, so that the "power" of pf_expression control also decreases
+#for identifying cofounders, a change in percentage of the first to the second model is required to be > 10% which is the case here, thus suggesting region being a confounder
+
+```
+
+```{r}
+diff_slopes <- tidy(lmExhfi)[2,2] - tidy(lmExhfiregion)[2,2]
+diff_slopes
+```
+
+
+```{r}
+change <- (tidy(lmExhfi)[2,2] - tidy(lmExhfiregion)[2,2])
+change
+
+```
+
+```{r}
+changeinpercentage <- (tidy(lmExhfi)[2,2] - tidy(lmExhfiregion)[2,2]) / tidy(lmExhfi)[2,2] * 100
+changeinpercentage
+
+```
+
+## Question 3
+
+Compare the $R^2$ for the 2 models from Q1 and Q2. Is there an increase by adding region? Think about the definition of $R^2$. What does this mean in this context?
+
+```{r}
+glance(lmExhfi) 
+```
+
+```{r}
+glance(lmExhfiregion)
+
+#the r.squared with the lmExhfi model is 0.6291262	and with the lmExhfiregion model is 0.7544951
+#so the r.squared value is increasing in the second model suggesting more variability in the hf score, so that the second model explains 75,44951% of the variability by region and expression conrol
+
+```
+
+
+
+
+## Question 4
+
+Fit a new model that uses  `ef_money` or monetary measure to predict `hf_score`.  What does the slope tell us in the context of the relationship between human freedom and the economy in the country? 
+
+```{r}
+lmHfmoney <- lm(hf_score ~ ef_money, data = hfi_2016)
+```
+
+```{r}
+tidy(lmHfmoney)
+```
+```{r}
+summarise(hfi_2016, correlation_hf_ef = cor(ef_money, hf_score))
+
+#
+```
+
+**Interpretation Ex. 4**: Correlation between hf_score and pf_expression control is 0.65. Intercept = 2.74 & slope = 0.5. This means that for every one unit increase in ef_money the human freedom score increases 0.5 units.
+
+
+## Question 5
+
+Again add region to the model from Q4. Compare the slope and $R^2$ with the model from Q4.
+
+```{r}
+lmReEfHf <- lm(hf_score ~ ef_money + region, data = hfi_2016)
+```
+
+```{r}
+tidy(lmReEfHf)
+```
+
+```{r}
+#model Q4
+glance(lmEfHf)
+```
+
+```{r}
+#model Q5
+glance(lmReEfHf)
+```
+
+```{r}
+percentage_change2 <- (tidy(lmEfHf)[2,2] - tidy(lmReEfHf)[2,2]) / tidy(lmEfHf)[2,2] * 100
+percentage_change2
+```
+
+
+**Interpretation Ex. 5**: Slope in Q4 is 0.5 while in Q5 it is 0.36. Therefore the slope decreases when adding the variable region, meaning that is has influence on the linear model. $R^2$ from Q4 is 0.425 while $R^2$ in Q5 raised to 0.74. Thus, $R^2$ greatly increased from 43 % to 74 % implying that the linear model including ef_money AND region is able to explain much of of hf_scores variablity. When calculating the percentage difference between the slope of model lmEfHf compared to lmReEfHf it shows a 28 % difference meaning that region is again a confounder.
+
+
+## Question 6
+
+Finally fit a model with `ef_money` and `pf_expression_control` as exposures and `hf_score` as outcome.  Compare the slope and $R^2$ from the models from Q1. Could `ef_money` be a confounder? 
+
+```{r}
+lmEfExHf <- lm(hf_score ~ ef_money + pf_expression_control, data = hfi_2016)
+```
+
+```{r}
+#model Q1
+tidy(lmExHf)
+```
+
+```{r}
+#model Q1
+glance(lmExHf)
+```
+
+```{r}
+#model Q6
+tidy(lmEfExHf)
+```
+
+```{r}
+#model Q6
+glance(lmEfExHf)
+```
+
+```{r}
+percentage_change3 <- (tidy(lmExHf)[2,2] - tidy(lmEfExHf)[3,2]) / tidy(lmEfExHf)[2,2] * 100
+percentage_change3
+```
+
+
+**Interpretation Ex. 6**:  The slope from Q1 is 0.368 while the slope of the model in Q6 is 0.318 for ef_money and 0.296 for pf_expression_control as exposures. When comparing the slope for pf_expression control in Q1 and Q6 we see a 23 % difference, showing that ef_money indeed is a confounder. $R^2$ from Q1 is 0.629 and from Q6 it is 0.77. Thus, the model of question 6 explains more of the variablity in the data of hf_score compared to the model in Q1. 
+
+
+## Question 7
+
+Use a linear regression model (and scatter plot) with  `ef_money` as exposure and `pf_expression_control` as outcome, to study whether `ef_money` has an association with `pf_expression_control` as well. This might validate our finding that `ef_money` is a confounder between  `pf_expression_control` as exposure and `hf_score` as outcome from Q6.
+
+```{r}
+ggplot(data = hfi_2016, aes(x = ef_money, y = pf_expression_control)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+```{r, echo = FALSE, out.width = "70%", eval=FALSE}
+knitr::include_graphics("https://github.com/allisonhorst/stats-illustrations/blob/master/rstats-artwork/code_hero.jpg?raw=true", dpi = 100)
+```
+
+
+ 
+```
+
+
+
+3\. Compare the $R^2$ for the 2 models from Q1 and Q2. Is there an increase by adding region? Think about the definition of $R^2$. What does this mean in this context?
+
+4.\ Fit a new model that uses  `ef_money` or monetary measure to predict `hf_score`.  What does the slope tell us in the context of the relationship between human freedom and the economy in the country? 
+
+5\. Again add region to the model from Q4. Compare the slope and $R^2$ with the model from Q4.
+
+6\. Finally fit a model with `ef_money` and `pf_expression_control` as exposures and `hf_score` as outcome.  Compare the slope and $R^2$ from the models from Q1. Could `ef_money` be a confounder? 
+
+7\. Use a linear regression model (and scatter plot) with  `ef_money` as exposure and `pf_expression_control` as outcome, to study whether `ef_money` has an association with `pf_expression_control` as well. This might validate our finding that `ef_money` is a confounder between  `pf_expression_control` as exposure and 
+`hf_score` as outcome from Q6.
+
+
