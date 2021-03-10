@@ -1,0 +1,206 @@
+---
+title: "first-analysis"
+author: "Defnecob"
+date: "2021-03-09"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Based on the exercises from Rajbir: [here](https://github.com/CompEpigen/BasicR/blob/master/markdown/Day3_3_MulitivariableRegression_Exercise.Rmd)
+
+7. Use the hfi dataset from the `openintro` package
+
+8. Fit a new model that uses  `pf_expression_control` to predict `hf_score`, or the total human freedom score.
+9. Again add region to the model from Q4. Compare the slope and $R^2$ with the model from Q4.
+
+10. Finally fit a model with `ef_money` and `pf_expression_control` as exposures and `hf_score` as outcome.  Compare the slope and $R^2$ from the models from Q1. Could `ef_money` be a confounder? 
+
+11. Use a linear regression model (and scatter plot) with  `ef_money` as exposure and `pf_expression_control` as outcome, to study whether `ef_money` has an association with `pf_expression_control` as well. This might validate our finding that `ef_money` is a confounder between  `pf_expression_control` as exposure and 
+`hf_score` as outcome from Q6.
+
+
+### Load packages
+```{r load-packages, message=FALSE}
+
+install.packages("openintro")
+library(openintro)
+library(broom)
+library(tidyverse)
+```
+
+### The data
+
+Exercise 7:
+
+```{r}
+hfi_2016 <- hfi %>% 
+  filter(year == 2016)
+
+head(hfi_2016)
+```
+
+
+
+------------------------------------------------------------------------
+
+Exercise 8:
+
+```{r echo=TRUE}
+model1 <- lm(hf_score ~ pf_expression_control, data = hfi_2016)
+
+tidy(model1) 
+```
+```{r echo=TRUE}
+summarise(hfi_2016, correlation_hf_pf = cor(pf_expression_control, hf_score))
+
+#Tells us that the correlation between expression_control and human freedom is 0.7931748
+#And that the intercept estimate is 5.053396 and the slope is 0.368432, this suggests that for every increase in pf_expression_control per unit, the human freedom increases by 0.368432
+```
+
+```{r}
+slope1 <- model1$coefficients["pf_expression_control"]
+slope1
+
+```
+
+Exercise 9:
+
+```{r}
+model2<- lm(hf_score ~ pf_expression_control + region, data = hfi_2016)
+
+tidy(model2) 
+
+
+```
+
+the slope between human freedom and expression control decreased to 0.27471091 in comparison to 0.368432 in the previous model without regions, so that the finluence of pf_expression control also decreased
+
+
+```{r}
+slope2 <- model2$coefficients["pf_expression_control"]
+slope2
+```
+
+
+```{r}
+glance(model1) 
+```
+
+```{r}
+rsquared1 <- summary(model1)$r.squared
+
+rsquared1 
+
+```
+```{r}
+glance(model2) 
+```
+
+
+```{r}
+rsquared2 <- summary(model2)$r.squared
+
+rsquared2
+```
+
+the r.squared with the model1 is 0.6291262	and with the model2 including region is 0.7544951
+so the r.squared value is increasing in the second model suggesting more variability in the hf score
+
+Exercsie 10:
+
+
+```{r}
+model3 <- lm(hf_score ~ ef_money, data = hfi_2016)
+model4<- lm(hf_score ~ pf_expression_control + ef_money, data = hfi_2016)
+
+```
+
+
+
+
+```{r}
+tidy(model3)
+glance(model3)
+```
+```{r}
+tidy(model4)
+glance(model4)
+```
+
+
+```{r}
+slope3 <- model3$coefficients["ef_money"]
+slope3
+
+```
+
+```{r}
+slope4 <- model4$coefficients["ef_money"]
+slope4
+```
+
+```{r}
+rsquared3 <- summary(model3)$r.squared
+rsquared3
+```
+
+
+```{r}
+rsquared4 <- summary(model4)$r.squared
+rsquared4
+```
+
+From comparing slope3 and slope4 one can tell that the additional exposure to hf_score and ef_money leads to an decrease in the ef_money slope from 0.504 to 0.352 
+
+When looking at the rsquared value: it increase from 0.425 to 0.756 indicating that ef_money can be a confounder
+
+-> for identifying cofounders, a change in percentage of from one model to the other is required to be > 10% which is the case here, thus suggesting ef_money being a confounder
+
+In general, when combining the variables the variance doesn't increase as much as expected
+
+
+Exercise 11:
+
+```{r}
+
+#for model5: pf_expression control as outcome, ef_money as exposures
+
+model5 <- lm(pf_expression_control ~ ef_money + region, data = hfi_2016)
+
+
+summary(model5)
+
+```
+
+```{r}
+tidy(model5)
+```
+
+
+```{r}
+ggplot(data = hfi_2016, aes(x = ef_money, y = pf_expression_control))+ 
+  geom_point(colour="darkgreen") + 
+  ggtitle(label="Linear regression model with ef_money and pf_expression_control")+
+  geom_smooth(method = "lm")+
+  theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  panel.background=element_blank(),
+  axis.line = element_line(colour = "grey")
+  )
+
+
+```
+
+This scatterplot shows that ef_money is a confounder between pf_expression_control as exposure and hf_score as outcome.
+
+
+```{r echo=TRUE, out.width="70%"}
+knitr::include_graphics("https://github.com/allisonhorst/stats-illustrations/blob/master/rstats-artwork/code_hero.jpg?raw=true", dpi = 100)
+```
+
+
+
+

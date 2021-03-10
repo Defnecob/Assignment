@@ -26,9 +26,33 @@ toc_float:
 install.packages("workflowr")
 library("workflowr")
 
-wflow_git_config(user.name = "Defnecob", user.email = "Cobanoglu@stud.uni-heidelberg.de", overwrite=TRUE)
+wflow_git_config(user.name = "Defnecob", user.email = "Cobanoglu@stud.uni-heidelberg.de",overwrite=TRUE)
 
-wflow_start("Assignment", existing = TRUE)
+wflow_start("myproject", git = FALSE)
+
+wflow_start("~/Desktop/R Kurs/Assignment/", name="myproject", existing = TRUE, user.name = "Defnecob",
+  user.email = "Cobanoglu@stud.uni-heidelberg.de")
+
+
+
+#wflow_build(files="finalresults.Rmd")
+
+wflow_view()
+
+wflow_publish(c("~/Desktop/R Kurs/Assignment/analysis/index.Rmd", "~/Desktop/R Kurs/Assignment/analysis/about.Rmd", "~/Desktop/R Kurs/Assignment/analysis/license.Rmd"),
+              "Publish the initial files for myproject")
+
+wflow_status()
+
+wflow_use_github("Defnecob")
+
+wflow_git_push(dry_run = TRUE)
+
+wflow_open("~/Desktop/R Kurs/Assignment/analysis/finalresults.Rmd")
+
+wflow_publish()
+
+wflow_build()
 
 ```
 
